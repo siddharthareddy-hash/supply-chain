@@ -13,11 +13,15 @@ st.title("📦 Supply Chain Intelligence Dashboard")
 
 @st.cache_data(ttl=600)
 def load_query(query: str) -> pd.DataFrame:
-    conn = psycopg2.connect(
-        host="localhost", port=5432, dbname="supply_chain",
-        user=os.getenv("POSTGRES_USER", "etl_user"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-    )
+    url = st.secrets.get("DATABASE_URL") or os.getenv("DATABASE_URL")
+    if url:
+        conn = psycopg2.connect(url)
+    else:  # local fallback
+        conn = psycopg2.connect(
+            host="localhost", port=5432, dbname="supply_chain",
+            user=os.getenv("POSTGRES_USER", "etl_user"),
+            password=os.getenv("POSTGRES_PASSWORD"),
+        )
     try:
         return pd.read_sql(query, conn)
     finally:
