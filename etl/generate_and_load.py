@@ -33,6 +33,8 @@ ROUTES = [
     ("RT-AIR-01",  "WH-03", "Frankfurt",   "Germany",     "AIR",   9,  1800),
 ]
 
+MODE_RISK = {"AIR": 0.10, "RAIL": 0.20, "SEA": 0.35, "ROAD": 0.25}
+
 
 def main():
     conn = psycopg2.connect(**DB)
@@ -47,7 +49,6 @@ def main():
                        Country, Region, Latitude, Longitude)
                        VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                     (wid, name, city, country, region, lat, lon))
-
     for sid, name, country, rel in SUPPLIERS:
         cur.execute("""INSERT INTO Dim_Supplier (Supplier_ID, Supplier_Name, Country,
                        Reliability_Score, Valid_From) VALUES (%s,%s,%s,%s,%s)""",
@@ -71,11 +72,14 @@ def main():
     supplier_keys = [r[0] for r in cur.fetchall()]
     cur.execute("SELECT Product_Key FROM Dim_Product")
     product_keys = [r[0] for r in cur.fetchall()]
-    cur.execute("SELECT Route_Key, Standard_Duration_Days, Base_Cost_USD "
+    cur.execute("SELECT Route_Key, Standard_Duration_Days, Base_Cost_USD, Transport_Mode "
                 "FROM Dim_Route WHERE Is_Current")
     routes = cur.fetchall()
     cur.execute("SELECT Warehouse_Key FROM Dim_Warehouse")
     warehouse_keys = [r[0] for r in cur.fetchall()]
+
+    SUPPLIER_RISK = {k: 0.25 * (4.9 - rel) / 2.4
+                     for k, (_, _, _, rel) in zip(supplier_keys, SUPPLIERS)}
 
     shipments, quarantine, n = [], [], 0
     for day in range(365):
@@ -83,9 +87,13 @@ def main():
         for _ in range(random.randint(2, 8)):
             n += 1
             shipment_id = f"SHP-{d:%Y%m%d}-{n:06d}"
-            route_key, std_days, base_cost = random.choice(routes)
-            transit = max(1, std_days + random.choice([-1, 0, 0, 0, 1, 1, 2, 5]))
-            delay = max(0, transit - std_days)
+            route_key, std_days, base_cost, mode = random.choice(routes)
+            sup_key = random.choice(supplier_keys)
+            season_risk = 0.10 if d.month in (11, 12, 1) else 0.0
+            p_delay = min(0.8, MODE_RISK[mode] + SUPPLIER_RISK[sup_key] + season_risk)
+            delay = int(random.expovariate(1 / 3)) if random.random() < p_delay else 0
+            transit = std_days + delay
+ 
             qty = random.randint(10, 500)
             cost = round(float(base_cost) * random.uniform(0.8, 1.3), 2)
             customs = round(Decimal(random.uniform(0, 900)), 2)
