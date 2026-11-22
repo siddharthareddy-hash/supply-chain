@@ -1,10 +1,7 @@
-pandas>=2.0
-numpy
-sqlalchemy>=2.0
-psycopg2-binary
-pandera>=0.18
-prophet
-scikit-learn
 streamlit
-faker
+psycopg2-binary
+pandas
+plotly
 python-dotenv
+numpy
+scikit-learn
