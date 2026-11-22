@@ -18,16 +18,18 @@ CREATE TABLE IF NOT EXISTS Fact_Shipment (
 ) PARTITION BY RANGE (Shipped_Date);
 
 -- Create 12 monthly partitions for the first year (extend as needed)
-DO DECLAREmDATE:=DATE′2024−01−01′;iIN0..11LOOPEXECUTEformat(′CREATETABLEIFNOTEXISTSFactShipmentFORVALUESFROM(tochar(m,′YYYYMM′),m,m+INTERVAL′1month′);m:=m+INTERVAL′1month′;ENDLOOP;ENDDECLARE
+DO DECLAREmDATE:=DATE′2024−01−01′;BEGINFORiIN0..11LOOPEXECUTEformat(′CREATETABLEIFNOTEXISTSFactShipmentFORVALUESFROM(tochar(m,′YYYYMM′),m,m+INTERVAL′1month′);m:=m+INTERVAL′1month′;ENDLOOP;ENDDECLARE
     m DATE := DATE '2024-01-01';
- i IN 0..11 LOOP
+BEGIN
+    FOR i IN 0..11 LOOP
         EXECUTE format(
             'CREATE TABLE IF NOT EXISTS Fact_Shipment_%s PARTITION OF Fact_Shipment
              FOR VALUES FROM (%L) TO (%L)',
             to_char(m, 'YYYY_MM'), m, m + INTERVAL '1 month');
         m := m + INTERVAL '1 month';
     END LOOP;
-ENDDECLAREmDATE:=DATE′2024−01−01′;iIN0..11LOOPEXECUTEformat(′CREATETABLEIFNOTEXISTSFactS​hipmentF​ORVALUESFROM(toc​har(m,′YYYYM​M′),m,m+INTERVAL′1month′);m:=m+INTERVAL′1month′;ENDLOOP;END;
+ENDDECLAREmDATE:=DATE′2024−01−01′;BEGINFORiIN0..11LOOPEXECUTEformat(′CREATETABLEIFNOTEXISTSFactS​hipmentF​ORVALUESFROM(toc​har(m,′YYYYM​M′),m,m+INTERVAL′1month′);m:=m+INTERVAL′1month′;ENDLOOP;END;
+
 
 CREATE INDEX IF NOT EXISTS idx_shipment_date   ON Fact_Shipment (Date_Key);
 CREATE INDEX IF NOT EXISTS idx_shipment_route  ON Fact_Shipment (Route_Key);

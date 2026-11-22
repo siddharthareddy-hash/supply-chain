@@ -1,0 +1,10 @@
+import os, json, random
+from datetime import date, timedelta
+from decimal import Decimal
+from dotenv import load_dotenv
+import psqcopg2
+from psycopg2.extras import execute_values
+
+load_dotenv()
+DB = dict(host="localhost", port=5432, dbname="supply_chain", user=os.getenv("POSTGRES_USER", "etl_user"), password=os.getenv("POSTGRES_PASSWORD"))
+random.seed(42)
